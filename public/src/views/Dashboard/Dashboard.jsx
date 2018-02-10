@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
-import { Grid, Row, Col, Button ,
-FormGroup, ControlLabel, FormControl} from 'react-bootstrap';
+import { Grid, Row, Col, Button } from 'react-bootstrap';
 
 import NotificationSystem from 'react-notification-system';
 import {style} from "../../variables/Variables.jsx";
@@ -10,19 +9,6 @@ import {Card} from '../../components/Card/Card.jsx';
 import {StatsCard} from '../../components/StatsCard/StatsCard.jsx';
 
 import axios from 'axios';
-
-import {
-    dataPie,
-    legendPie,
-    dataSales,
-    optionsSales,
-    responsiveSales,
-    legendSales,
-    dataBar,
-    optionsBar,
-    responsiveBar,
-    legendBar
-} from '../../variables/Variables.jsx';
 
 class Dashboard extends Component {
     constructor(props){
@@ -42,10 +28,11 @@ class Dashboard extends Component {
             proxies: (localStorage.getItem('proxies') || '').split(','),
             loadImages: true,
             userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36',
+            hostname: window.location.hostname,
         };
 
         if (this.state.proxies[0] === '') {
-            this.state.proxies = [];
+            this.setState.proxies = [];
         }
 
         this.startJob = this.startJob.bind(this);
@@ -103,18 +90,18 @@ class Dashboard extends Component {
         }
         console.log(typeof(this.state.loadImages))
         var self = this;
-        axios.post('http://localhost:3002/start', {
+        axios.post('http://' + this.state.hostname + ':3002/start', {
             url: this.state.url,
-            sleepTime: parseInt(this.state.sleepTime),
-            threadCount: parseInt(this.state.threadCount),
-            requestCount: parseInt(this.state.requestCount),
-            requestTimeout: parseInt(this.state.requestTimeout),
+            sleepTime: parseInt(this.state.sleepTime, 10),
+            threadCount: parseInt(this.state.threadCount, 10),
+            requestCount: parseInt(this.state.requestCount, 10),
+            requestTimeout: parseInt(this.state.requestTimeout, 10),
             proxies: this.state.proxies,
             loadImages: this.state.loadImages,
             userAgent: this.state.userAgent,
           })
           .then(function (response) {
-            self.setState({totalReq: parseInt(self.state.requestCount)});
+            self.setState({totalReq: parseInt(self.state.requestCount, 10)});
             self.showMessage('success', 'Job started successfully');
             self.checkStatus();
           })
@@ -129,7 +116,7 @@ class Dashboard extends Component {
 
     checkStatus() {
         var self = this;
-        axios.get('http://localhost:3002/status')
+        axios.get('http://' + this.state.hostname + ':3002/status')
           .then(function (response) {
             var data = response.data;
             self.updateStats(data);
@@ -148,7 +135,7 @@ class Dashboard extends Component {
 
     stopJob() {
         var self = this;
-        axios.get('http://localhost:3002/stop').then(function (response) {
+        axios.get('http://' + this.state.hostname + ':3002/stop').then(function (response) {
 
           })
           .catch(function (error) {
