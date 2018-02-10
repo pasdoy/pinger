@@ -18,7 +18,7 @@ func checkForUpdate() {
 		Store: &github.Store{
 			Owner:   "pasdoy",
 			Repo:    "pinger",
-			Version: "0.1.1",
+			Version: VERSION,
 		},
 	}
 
