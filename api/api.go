@@ -53,7 +53,7 @@ func Start() {
 
 	status = Status{}
 
-	if !*skipUpdate {
+	if !*debug && !*skipUpdate {
 		checkForUpdate()
 	}
 
@@ -69,10 +69,9 @@ func Start() {
 	}))
 
 	if !*debug {
-		box1 := packr.NewBox("../public/build") //hack to make packr work
-		log.Debug(box1)                         //hack to make packr work
-		box := packr.NewBox("public/build")
-		e.Static("/", box.Path)
+		assetHandler := http.FileServer(packr.NewBox("../public/build/"))
+		//box := packr.NewBox("public/build")
+		e.GET("/*", echo.WrapHandler(assetHandler))
 		go openBrowser(1)
 	} else {
 		log.SetLevel(log.DebugLevel)
