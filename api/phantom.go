@@ -29,19 +29,27 @@ func handlePhantomJSBin() {
 	}
 
 	log.Info("Downloading PhantomJS...")
-	downloadPhantomJSLib(filepath.Join(tmpFolder, "./phantomjs.zip"))
 
-	extractPath := filepath.Join(tmpFolder, "extracted")
-	Unzip(filepath.Join(tmpFolder, "./phantomjs.zip"), extractPath)
+	if runtime.GOOS != "linux" {
+		downloadPhantomJSLib(filepath.Join(tmpFolder, "./phantomjs.zip"))
 
-	//get fbinary path
-	files, _ := filepath.Glob(filepath.Join(extractPath, "*/bin/phantomjs"))
-	if len(files) == 0 {
-		log.Fatal("Cannot find phantomjs binary after extraction")
+		extractPath := filepath.Join(tmpFolder, "extracted")
+		Unzip(filepath.Join(tmpFolder, "./phantomjs.zip"), extractPath)
+
+		//get fbinary path
+		files, _ := filepath.Glob(filepath.Join(extractPath, "*/bin/phantomjs"))
+		if len(files) == 0 {
+			log.Fatal("Cannot find phantomjs binary after extraction")
+		}
+
+		FileCopy(files[0], "./phantomjs")
+		os.Chmod("./phantomjs", 0766)
+	} else {
+		path := filepath.Join(tmpFolder, "./phantomjs")
+		downloadPhantomJSLib(path)
+		FileCopy(path, "./phantomjs")
+		os.Chmod("./phantomjs", 0766)
 	}
-
-	FileCopy(files[0], "./phantomjs")
-	os.Chmod("./phantomjs", 0766)
 
 	return
 }
@@ -58,7 +66,7 @@ func downloadPhantomJSLib(fPath string) error {
 		url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-macosx.zip"
 	}
 	if runtime.GOOS == "linux" {
-		url = "https://github.com/ariya/phantomjs/archive/2.1.3.zip"
+		url = "https://github.com/ariya/phantomjs/releases/download/2.1.3/phantomjs"
 	}
 
 	// Get the data
