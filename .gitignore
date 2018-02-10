@@ -1,2 +1,4 @@
 public/build
 public/node_modules
+phantomjs
+pinger
