@@ -2,3 +2,5 @@ public/build
 public/node_modules
 phantomjs
 pinger
+pinger_0.1_darwin_amd64.tar.gz
+dist
