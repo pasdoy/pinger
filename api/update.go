@@ -14,7 +14,7 @@ import (
 func checkForUpdate() {
 	log.Info("Check for update....")
 	m := &update.Manager{
-		Command: "polls",
+		Command: "./pinger",
 		Store: &github.Store{
 			Owner:   "pasdoy",
 			Repo:    "pinger",

@@ -17,7 +17,7 @@ import (
 
 var (
 	debug      = kingpin.Flag("debug", "Debug mode.").Short('d').OverrideDefaultFromEnvar("DEBUG").Bool()
-	VERSION    = "0.1.1"
+	VERSION    = "0.1.2"
 	port       = kingpin.Flag("port", "API port").Short('p').OverrideDefaultFromEnvar("PORT").Default("3002").Int()
 	skipUpdate = kingpin.Flag("skip-update", "API port").Bool()
 	shimPort   = 20111
