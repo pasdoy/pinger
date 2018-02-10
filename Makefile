@@ -1,3 +1,3 @@
 build:
-	cd api/public && npm run build
+	cd public && npm run build
 	packr
