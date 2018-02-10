@@ -16,7 +16,7 @@ class Dashboard extends Component {
 
         this.state = {
             started: false,
-            url: '',
+            url: localStorage.getItem('url') || '',
             sleepTime: 4,
             threadCount: 1,
             requestCount: 1,
@@ -32,7 +32,7 @@ class Dashboard extends Component {
         };
 
         if (this.state.proxies[0] === '') {
-            this.setState.proxies = [];
+            this.state.proxies = [];
         }
 
         this.startJob = this.startJob.bind(this);
@@ -44,6 +44,19 @@ class Dashboard extends Component {
 
     componentDidMount(){
         this.setState({_notificationSystem: this.refs.notificationSystem});
+
+        var self = this;
+        axios.get('http://' + this.state.hostname + ':3002/status')
+          .then(function (response) {
+             var data = response.data;
+             if (data.Active) {
+                self.setState({started: true});
+                self.checkStatus();
+             }
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
     }
 
     showMessage(color, message, title) {
@@ -116,17 +129,20 @@ class Dashboard extends Component {
 
     checkStatus() {
         var self = this;
+        if (!this.state.started) {
+          return;
+        }
+
         axios.get('http://' + this.state.hostname + ':3002/status')
           .then(function (response) {
             var data = response.data;
             self.updateStats(data);
             if (self.state.totalReq - data.TotalReq === 0) {
-                self.showMessage('success', 'Job finished');
                 self.stopJob();
                 return;
             }
 
-            setTimeout(function(){self.checkStatus();}, 5000);
+            setTimeout(function(){self.checkStatus();}, 3000);
           })
           .catch(function (error) {
             console.log(error);
@@ -136,7 +152,7 @@ class Dashboard extends Component {
     stopJob() {
         var self = this;
         axios.get('http://' + this.state.hostname + ':3002/stop').then(function (response) {
-
+            self.showMessage('success', 'Job stopped');
           })
           .catch(function (error) {
             console.log(error);
@@ -150,10 +166,12 @@ class Dashboard extends Component {
             failedReq: data.FailedReq,
             successReq: data.SuccessReq,
             remainingReq:  this.state.totalReq - data.TotalReq,
+            totalReq: data.MaxReq,
         });
     }
 
     handleChangeURL(event) {
+        localStorage.setItem('url', event.target.value);
         this.setState({url: event.target.value});
     }
 

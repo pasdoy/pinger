@@ -17,11 +17,12 @@ import (
 
 var (
 	debug      = kingpin.Flag("debug", "Debug mode.").Short('d').OverrideDefaultFromEnvar("DEBUG").Bool()
-	VERSION    = "0.1.2"
+	VERSION    = "0.1.3"
 	port       = kingpin.Flag("port", "API port").Short('p').OverrideDefaultFromEnvar("PORT").Default("3002").Int()
 	skipUpdate = kingpin.Flag("skip-update", "API port").Bool()
 	shimPort   = 20111
 	proxies    chan string
+	ch         chan bool
 	status     Status
 )
 
@@ -31,6 +32,7 @@ type Status struct {
 	FailedReq  int
 	SuccessReq int
 	TotalReq   int
+	MaxReq     int
 }
 
 func (s *Status) Success() {
@@ -95,6 +97,14 @@ func getStatus(c echo.Context) error {
 }
 
 func stopJob(c echo.Context) error {
+L:
+	for {
+		select {
+		case <-ch:
+		default:
+			break L
+		}
+	}
 	status = Status{}
 	return c.String(http.StatusOK, "ok")
 }
@@ -121,8 +131,8 @@ func startJob(c echo.Context) error {
 	}
 	log.Debug(r)
 
-	ch := make(chan bool, 1000000)
-	status = Status{}
+	ch = make(chan bool, 1000000)
+	status = Status{MaxReq: r.RequestCount}
 	proxies = make(chan string, len(r.Proxies))
 	log.Debugf("Proxies: %d", len(r.Proxies))
 	for _, proxy := range r.Proxies {
