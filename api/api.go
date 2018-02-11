@@ -17,7 +17,7 @@ import (
 
 var (
 	debug        = kingpin.Flag("debug", "Debug mode.").Short('d').OverrideDefaultFromEnvar("DEBUG").Bool()
-	VERSION      = "0.1.3"
+	VERSION      = "0.1.4"
 	port         = kingpin.Flag("port", "API port").Short('p').OverrideDefaultFromEnvar("PORT").Default("3002").Int()
 	skipUpdate   = kingpin.Flag("skip-update", "API port").Bool()
 	authUsername = kingpin.Flag("auth-username", "Username Basic Auth setup").OverrideDefaultFromEnvar("AUTH_USERNAME").Default("").String()
@@ -93,6 +93,9 @@ func Start() {
 	e.POST("/start", startJob)
 	e.GET("/stop", stopJob)
 	e.GET("/status", getStatus)
+	e.POST("/debug", postDebug)
+
+	e.File("/debug/file.png", ".debug/debug.png")
 
 	e.Start(fmt.Sprintf(":%d", *port))
 
@@ -160,6 +163,65 @@ func startJob(c echo.Context) error {
 	}
 
 	status.Active = true
+
+	return c.String(http.StatusOK, "ok")
+}
+
+type PayloadDebug struct {
+	URL        string `json:"url"`
+	Proxy      string `json:"proxy"`
+	LoadImages bool   `json:"loadImages"`
+	UserAgent  string `json:"userAgent"`
+}
+
+func postDebug(c echo.Context) error {
+	r := new(PayloadDebug)
+	if err := c.Bind(r); err != nil {
+		return err
+	}
+
+	p := phantomjs.NewProcess()
+	p.BinPath = "./phantomjs"
+	p.Port = 30231
+	if err := p.Open(); err != nil {
+		log.Error(err)
+		return errors.New("Cannot start PhantomJS process")
+	}
+	defer p.Close()
+
+	page, err := p.CreateWebPage()
+	if err != nil {
+		log.Error(err)
+		return errors.New("Cannot start PhantomJS Page")
+	}
+
+	currentSettings, _ := page.Settings()
+	currentSettings.LoadImages = r.LoadImages
+	currentSettings.UserAgent = r.UserAgent
+	err = page.SetSettings(currentSettings)
+	if err != nil {
+		log.Error(err)
+		return errors.New("Cannot set PhantomJS Page settings")
+	}
+
+	if r.Proxy != "" {
+		err = page.SetProxy(r.Proxy)
+		if err != nil {
+			log.Error(err)
+			return errors.New("Cannot set PhantomJS Page proxy")
+		}
+	}
+	log.Debug(r.URL)
+	if err := page.Open(r.URL); err != nil {
+		log.Error(err)
+		return errors.New("Cannot fetch URL")
+	}
+
+	err = page.Render("./.debug/debug.png", "PNG", 10)
+	if err != nil {
+		log.Error(err)
+		return errors.New("Failed to render page")
+	}
 
 	return c.String(http.StatusOK, "ok")
 }

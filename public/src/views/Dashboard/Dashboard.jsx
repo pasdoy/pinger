@@ -338,6 +338,20 @@ class Dashboard extends Component {
                                 }
                             />
                         </Col>
+                        <Col md={4}>
+                          <Card
+                                title="Debug the page"
+                                content={
+                                  <div className="text-center">
+                                    <p>Check what your page looks like in the browser</p>
+                                    <p></p>
+                                    <a className="btn" href="#/debug">
+                                      Try it
+                                    </a>
+                                  </div>
+                                }
+                          />
+                        </Col>
                     </Row>
 
                 </Grid>

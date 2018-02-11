@@ -4,11 +4,13 @@ import TableList from '../views/TableList/TableList';
 import Typography from '../views/Typography/Typography';
 import Icons from '../views/Icons/Icons';
 import Maps from '../views/Maps/Maps';
+import Debug from '../views/Debug/Debug';
 import Notifications from '../views/Notifications/Notifications';
 
 const appRoutes = [
     { path: "/dashboard", name: "Dashboard", icon: "pe-7s-graph", component: Dashboard },
     { path: "/proxies", name: "Proxies", icon: "pe-7s-user", component: UserProfile },
+    { path: "/debug", name: "Debug", icon: "pe-7s-science", component: Debug },
     /*{ path: "/table", name: "Table List", icon: "pe-7s-note2", component: TableList },
     { path: "/typography", name: "Typography", icon: "pe-7s-news-paper", component: Typography },
     { path: "/icons", name: "Icons", icon: "pe-7s-science", component: Icons },
