@@ -37,7 +37,7 @@ func handlePhantomJSBin() {
 		Unzip(filepath.Join(tmpFolder, "./phantomjs.zip"), extractPath)
 
 		//get fbinary path
-		files, _ := filepath.Glob(filepath.Join(extractPath, "*/bin/phantomjs"))
+		files, _ := filepath.Glob(filepath.Join(extractPath, "*/bin/phantomjs*"))
 		if len(files) == 0 {
 			log.Fatal("Cannot find phantomjs binary after extraction")
 		}

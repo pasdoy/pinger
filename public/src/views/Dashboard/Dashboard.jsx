@@ -112,6 +112,7 @@ class Dashboard extends Component {
             proxies: this.state.proxies,
             loadImages: this.state.loadImages,
             userAgent: this.state.userAgent,
+            customScript: localStorage.getItem('scriptScript') || "",
           })
           .then(function (response) {
             self.setState({totalReq: parseInt(self.state.requestCount, 10)});

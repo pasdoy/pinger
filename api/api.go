@@ -9,7 +9,10 @@ import (
 	"github.com/labstack/echo/middleware"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"io/ioutil"
 	"net/http"
+	"os/exec"
+	"path/filepath"
 	"pinger/phantom"
 	"runtime"
 	"sync"
@@ -25,6 +28,7 @@ var (
 	authPassword = kingpin.Flag("auth-password", "Password Basic Auth setup").OverrideDefaultFromEnvar("AUTH_PASSWORD").Default("").String()
 	shimPort     = 20111
 	proxies      chan string
+	nbProxies    = 0
 	ch           chan bool
 	status       Status
 	phantomExe   string
@@ -101,6 +105,7 @@ func Start() {
 	e.GET("/stop", stopJob)
 	e.GET("/status", getStatus)
 	e.POST("/debug", postDebug)
+	e.POST("/script/test", postScriptTest)
 
 	e.File("/debug/file.png", ".debug/debug.png")
 
@@ -108,6 +113,47 @@ func Start() {
 
 	//start()
 
+}
+
+type PayloadScriptTest struct {
+	URL    string `json:"url"`
+	Script string `json:"script"`
+}
+
+func postScriptTest(c echo.Context) error {
+	r := new(PayloadScriptTest)
+	if err := c.Bind(r); err != nil {
+		return err
+	}
+
+	shim := fmt.Sprintf(`var page = require('webpage').create();
+var msg = {url: "%s"};
+%s
+phantom.exit()`, r.URL, r.Script)
+
+	p := phantom.NewProcess()
+	p.BinPath = phantomExe
+	p.Port = 30231
+
+	// Generate temporary path to run script from.
+	path, err := ioutil.TempDir("", "phantomjs-")
+	if err != nil {
+		return err
+	}
+
+	// Write shim script.
+	scriptPath := filepath.Join(path, "shim.js")
+	if err := ioutil.WriteFile(scriptPath, []byte(shim), 0600); err != nil {
+		return err
+	}
+
+	out, err := exec.Command(p.BinPath, scriptPath).Output()
+	if err != nil {
+		return err
+	}
+	// Start external process.
+
+	return c.JSON(http.StatusOK, map[string]interface{}{"output": string(out)})
 }
 
 func getStatus(c echo.Context) error {
@@ -139,6 +185,7 @@ type PayloadStart struct {
 	Proxies        []string `json:"proxies"`
 	LoadImages     bool     `json:"loadImages"`
 	UserAgent      string   `json:"userAgent"`
+	CustomScript   string   `json:"customScript"`
 }
 
 func startJob(c echo.Context) error {
@@ -155,6 +202,7 @@ func startJob(c echo.Context) error {
 	ch = make(chan bool, 1000000)
 	status = Status{MaxReq: r.RequestCount}
 	proxies = make(chan string, len(r.Proxies))
+	nbProxies = len(r.Proxies)
 	log.Debugf("Proxies: %d", len(r.Proxies))
 	for _, proxy := range r.Proxies {
 		proxies <- proxy
@@ -166,7 +214,7 @@ func startJob(c echo.Context) error {
 
 	for i := 0; i < r.ThreadCount; i++ {
 		shimPort += 1
-		go start(r.URL, r.SleepTime, ch, shimPort, r.RequestTimeout, r.LoadImages, r.UserAgent)
+		go start(r, ch, shimPort)
 	}
 
 	status.Active = true
@@ -190,7 +238,7 @@ func postDebug(c echo.Context) error {
 	p := phantom.NewProcess()
 	p.BinPath = phantomExe
 	p.Port = 30231
-	if err := p.Open(); err != nil {
+	if err := p.Open(phantom.GetDefaultShim()); err != nil {
 		log.Error(err)
 		return errors.New("Cannot start PhantomJS process")
 	}
@@ -219,7 +267,7 @@ func postDebug(c echo.Context) error {
 		}
 	}
 	log.Debug(r.URL)
-	if err := page.Open(r.URL); err != nil {
+	if err := page.Flow(r.URL); err != nil {
 		log.Error(err)
 		return errors.New("Cannot fetch URL")
 	}
@@ -234,7 +282,7 @@ func postDebug(c echo.Context) error {
 }
 
 func getProxy() string {
-	if len(proxies) == 0 {
+	if nbProxies == 0 {
 		return ""
 	}
 
@@ -243,11 +291,11 @@ func getProxy() string {
 	return p
 }
 
-func start(url string, sleepTime int, workChan chan bool, apiPort int, requestTimeout int, loadImages bool, userAgent string) {
+func start(r *PayloadStart, workChan chan bool, apiPort int) {
 	p := phantom.NewProcess()
 	p.BinPath = phantomExe
 	p.Port = apiPort
-	if err := p.Open(); err != nil {
+	if err := p.Open(phantom.GetShim(r.CustomScript)); err != nil {
 		log.Error(err)
 		return
 	}
@@ -260,9 +308,9 @@ func start(url string, sleepTime int, workChan chan bool, apiPort int, requestTi
 	}
 
 	currentSettings, _ := page.Settings()
-	currentSettings.ResourceTimeout = time.Duration(requestTimeout) * time.Second
-	currentSettings.LoadImages = loadImages
-	currentSettings.UserAgent = userAgent
+	currentSettings.ResourceTimeout = time.Duration(r.RequestTimeout) * time.Second
+	currentSettings.LoadImages = r.LoadImages
+	currentSettings.UserAgent = r.UserAgent
 	page.SetSettings(currentSettings)
 	for {
 		select {
@@ -271,12 +319,12 @@ func start(url string, sleepTime int, workChan chan bool, apiPort int, requestTi
 			if p != "" {
 				page.SetProxy(p)
 			}
-			if err := page.Open(url); err != nil {
+			if err := page.Flow(r.URL); err != nil {
 				status.Error()
 				continue
 			}
 			log.Debug("Ping worked")
-			time.Sleep(time.Duration(sleepTime) * time.Second)
+			time.Sleep(time.Duration(r.SleepTime) * time.Second)
 			status.Success()
 		default:
 			return

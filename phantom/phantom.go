@@ -66,7 +66,7 @@ func (p *Process) Path() string {
 }
 
 // Open start the phantomjs process with the shim script.
-func (p *Process) Open() error {
+func (p *Process) Open(customShim string) error {
 	if err := func() error {
 		// Generate temporary path to run script from.
 		path, err := ioutil.TempDir("", "phantomjs-")
@@ -77,7 +77,7 @@ func (p *Process) Open() error {
 
 		// Write shim script.
 		scriptPath := filepath.Join(path, "shim.js")
-		if err := ioutil.WriteFile(scriptPath, []byte(shim), 0600); err != nil {
+		if err := ioutil.WriteFile(scriptPath, []byte(customShim), 0600); err != nil {
 			return err
 		}
 
@@ -103,6 +103,27 @@ func (p *Process) Open() error {
 	}
 
 	return nil
+}
+
+func GetShim(custom string) string {
+	d := `page.open(msg.url, function(status) {
+		response.write(JSON.stringify({status: status}));
+		response.closeGracefully();
+	})`
+
+	if custom == "" {
+		custom = d
+	}
+	return fmt.Sprintf(shim, custom)
+}
+
+func GetDefaultShim() string {
+	d := `page.open(msg.url, function(status) {
+		response.write(JSON.stringify({status: status}));
+		response.closeGracefully();
+	})`
+
+	return fmt.Sprintf(shim, d)
 }
 
 // Close stops the process.
@@ -276,6 +297,18 @@ func (p *WebPage) SetProxy(proxyURL string) error {
 	}
 
 	p.ref.process.doJSON("POST", "/webpage/SetProxy", req, nil)
+
+	return nil
+}
+
+// Open opens a URL.
+func (p *WebPage) Flow(url string) error {
+	req := map[string]interface{}{
+		"ref": p.ref.id,
+		"url": url,
+	}
+
+	p.ref.process.doJSON("POST", "/webpage/Flow", req, nil)
 
 	return nil
 }
@@ -1219,6 +1252,8 @@ server.listen(system.env["PORT"], function(request, response) {
 			case '/webpage/ZoomFactor': return handleWebpageZoomFactor(request, response);
 			case '/webpage/SetZoomFactor': return handleWebpageSetZoomFactor(request, response);
 
+			case '/webpage/Flow': return handleWebpageFlow(request, response);
+
 			case '/webpage/AddCookie': return handleWebpageAddCookie(request, response);
 			case '/webpage/SetProxy': return handleSetProxy(request, response);
 			case '/webpage/ClearCookies': return handleWebpageClearCookies(request, response);
@@ -1330,6 +1365,13 @@ function handleWebpageOpen(request, response) {
 		response.write(JSON.stringify({status: status}));
 		response.closeGracefully();
 	})
+}
+
+function handleWebpageFlow(request, response) {
+	var msg = JSON.parse(request.post)
+	var page = ref(msg.ref)
+	%s
+	response.closeGracefully();
 }
 
 function handleWebpageContent(request, response) {
