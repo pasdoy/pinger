@@ -80,8 +80,9 @@ class UserProfile extends Component {
                                     <form onSubmit={this.saveProxies}>
                                         Add your proxies using this format, one per line:
                                         <ul>
-                                            <li>http://192.168.0.0.1:80</li>
-                                            <li>socks5://192.168.0.0.1:8080</li>
+                                            <li>http://192.168.0.1:80</li>
+                                            <li>192.168.0.0.1:8080</li>
+                                            <li>socks5://192.168.0.1:8080</li>
                                         </ul>
                                         <Row>
                                             <Col md={12}>

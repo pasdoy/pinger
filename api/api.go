@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"pinger/phantom"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -201,11 +202,17 @@ func startJob(c echo.Context) error {
 
 	ch = make(chan bool, 1000000)
 	status = Status{MaxReq: r.RequestCount}
+
 	proxies = make(chan string, len(r.Proxies))
-	nbProxies = len(r.Proxies)
+	nbProxies = 0
 	log.Debugf("Proxies: %d", len(r.Proxies))
 	for _, proxy := range r.Proxies {
+
+		proxy = cleanProxy(proxy)
+
+		log.Debug(proxy)
 		proxies <- proxy
+		nbProxies += 1
 	}
 
 	for i := 0; i < r.RequestCount; i++ {
@@ -260,7 +267,7 @@ func postDebug(c echo.Context) error {
 	}
 
 	if r.Proxy != "" {
-		err = page.SetProxy(r.Proxy)
+		err = page.SetProxy(cleanProxy(r.Proxy))
 		if err != nil {
 			log.Error(err)
 			return errors.New("Cannot set PhantomJS Page proxy")
@@ -316,7 +323,6 @@ func start(r *PayloadStart, workChan chan bool, apiPort int) {
 		select {
 		case <-workChan:
 			p := getProxy()
-			log.Debug(p)
 			if p != "" {
 				err := page.SetProxy(p)
 				if err != nil {
@@ -336,4 +342,12 @@ func start(r *PayloadStart, workChan chan bool, apiPort int) {
 			return
 		}
 	}
+}
+
+func cleanProxy(p string) string {
+	if !strings.HasPrefix(p, "http://") && !strings.HasPrefix(p, "socks5://") {
+		p = "http://" + p
+	}
+
+	return p
 }
