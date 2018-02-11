@@ -16,14 +16,16 @@ import (
 )
 
 var (
-	debug      = kingpin.Flag("debug", "Debug mode.").Short('d').OverrideDefaultFromEnvar("DEBUG").Bool()
-	VERSION    = "0.1.3"
-	port       = kingpin.Flag("port", "API port").Short('p').OverrideDefaultFromEnvar("PORT").Default("3002").Int()
-	skipUpdate = kingpin.Flag("skip-update", "API port").Bool()
-	shimPort   = 20111
-	proxies    chan string
-	ch         chan bool
-	status     Status
+	debug        = kingpin.Flag("debug", "Debug mode.").Short('d').OverrideDefaultFromEnvar("DEBUG").Bool()
+	VERSION      = "0.1.3"
+	port         = kingpin.Flag("port", "API port").Short('p').OverrideDefaultFromEnvar("PORT").Default("3002").Int()
+	skipUpdate   = kingpin.Flag("skip-update", "API port").Bool()
+	authUsername = kingpin.Flag("auth-username", "Username Basic Auth setup").OverrideDefaultFromEnvar("AUTH_USERNAME").Default("").String()
+	authPassword = kingpin.Flag("auth-password", "Password Basic Auth setup").OverrideDefaultFromEnvar("AUTH_USERNAME").Default("").String()
+	shimPort     = 20111
+	proxies      chan string
+	ch           chan bool
+	status       Status
 )
 
 type Status struct {
@@ -69,6 +71,15 @@ func Start() {
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
+
+	if *authUsername != "" && *authPassword != "" {
+		e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+			if username == *authUsername && password == *authPassword {
+				return true, nil
+			}
+			return false, nil
+		}))
+	}
 
 	if !*debug {
 		assetHandler := http.FileServer(packr.NewBox("../public/build/"))
