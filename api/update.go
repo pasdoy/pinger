@@ -14,8 +14,12 @@ import (
 
 func checkForUpdate() {
 	log.Info("Check for update....")
+	s := "./pinger"
+	if runtime.GOOS == "windows" {
+		s = "./pinger.exe"
+	}
 	m := &update.Manager{
-		Command: "./pinger",
+		Command: s,
 		Store: &github.Store{
 			Owner:   "pasdoy",
 			Repo:    "pinger",

@@ -4,20 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/benbjohnson/phantomjs"
 	"github.com/gobuffalo/packr"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"net/http"
+	"pinger/phantom"
+	"runtime"
 	"sync"
 	"time"
 )
 
 var (
 	debug        = kingpin.Flag("debug", "Debug mode.").Short('d').OverrideDefaultFromEnvar("DEBUG").Bool()
-	VERSION      = "0.1.4"
+	VERSION      = "0.1.3"
 	port         = kingpin.Flag("port", "API port").Short('p').OverrideDefaultFromEnvar("PORT").Default("3002").Int()
 	skipUpdate   = kingpin.Flag("skip-update", "API port").Bool()
 	authUsername = kingpin.Flag("auth-username", "Username Basic Auth setup").OverrideDefaultFromEnvar("AUTH_USERNAME").Default("").String()
@@ -26,6 +27,7 @@ var (
 	proxies      chan string
 	ch           chan bool
 	status       Status
+	phantomExe   string
 )
 
 type Status struct {
@@ -54,6 +56,11 @@ func (s *Status) Error() {
 func Start() {
 	kingpin.Version(VERSION)
 	kingpin.Parse()
+
+	phantomExe = "./phantomjs"
+	if runtime.GOOS == "windows" {
+		phantomExe = "./phantomjs.exe"
+	}
 
 	status = Status{}
 
@@ -180,8 +187,8 @@ func postDebug(c echo.Context) error {
 		return err
 	}
 
-	p := phantomjs.NewProcess()
-	p.BinPath = "./phantomjs"
+	p := phantom.NewProcess()
+	p.BinPath = phantomExe
 	p.Port = 30231
 	if err := p.Open(); err != nil {
 		log.Error(err)
@@ -237,8 +244,8 @@ func getProxy() string {
 }
 
 func start(url string, sleepTime int, workChan chan bool, apiPort int, requestTimeout int, loadImages bool, userAgent string) {
-	p := phantomjs.NewProcess()
-	p.BinPath = "./phantomjs"
+	p := phantom.NewProcess()
+	p.BinPath = phantomExe
 	p.Port = apiPort
 	if err := p.Open(); err != nil {
 		log.Error(err)

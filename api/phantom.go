@@ -18,7 +18,7 @@ func handlePhantomJSBin() {
 		log.Info("PhantomJS OK")
 	}()
 
-	phanFile, _ := filepath.Glob("./phantomjs")
+	phanFile, _ := filepath.Glob(phantomExe)
 	if len(phanFile) > 0 {
 		return
 	}
