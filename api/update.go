@@ -7,6 +7,7 @@ import (
 	"github.com/tj/go-update"
 	"github.com/tj/go-update/progress"
 	"github.com/tj/go-update/stores/github"
+	"os"
 	"runtime"
 	"time"
 )
@@ -53,6 +54,7 @@ func checkForUpdate() {
 	fmt.Printf("Updated to %s\n", latest.Version)
 
 	log.Info("Update done")
+	os.Exit(0)
 }
 
 func openBrowser(delay int) {
