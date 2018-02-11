@@ -21,7 +21,7 @@ var (
 	port         = kingpin.Flag("port", "API port").Short('p').OverrideDefaultFromEnvar("PORT").Default("3002").Int()
 	skipUpdate   = kingpin.Flag("skip-update", "API port").Bool()
 	authUsername = kingpin.Flag("auth-username", "Username Basic Auth setup").OverrideDefaultFromEnvar("AUTH_USERNAME").Default("").String()
-	authPassword = kingpin.Flag("auth-password", "Password Basic Auth setup").OverrideDefaultFromEnvar("AUTH_USERNAME").Default("").String()
+	authPassword = kingpin.Flag("auth-password", "Password Basic Auth setup").OverrideDefaultFromEnvar("AUTH_PASSWORD").Default("").String()
 	shimPort     = 20111
 	proxies      chan string
 	ch           chan bool
