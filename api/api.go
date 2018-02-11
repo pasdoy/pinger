@@ -237,7 +237,7 @@ func postDebug(c echo.Context) error {
 
 	p := phantom.NewProcess()
 	p.BinPath = phantomExe
-	p.Port = 30231
+	p.Port = 30232
 	if err := p.Open(phantom.GetDefaultShim()); err != nil {
 		log.Error(err)
 		return errors.New("Cannot start PhantomJS process")
@@ -266,8 +266,8 @@ func postDebug(c echo.Context) error {
 			return errors.New("Cannot set PhantomJS Page proxy")
 		}
 	}
-	log.Debug(r.URL)
-	if err := page.Flow(r.URL); err != nil {
+
+	if err := page.Open(r.URL); err != nil {
 		log.Error(err)
 		return errors.New("Cannot fetch URL")
 	}
@@ -316,8 +316,14 @@ func start(r *PayloadStart, workChan chan bool, apiPort int) {
 		select {
 		case <-workChan:
 			p := getProxy()
+			log.Debug(p)
 			if p != "" {
-				page.SetProxy(p)
+				err := page.SetProxy(p)
+				if err != nil {
+					log.Error(err)
+					status.Error()
+					continue
+				}
 			}
 			if err := page.Flow(r.URL); err != nil {
 				status.Error()

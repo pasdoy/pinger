@@ -64,7 +64,7 @@ class Debug extends Component{
           })
           .catch(function (error) {
             console.log(error);
-            self.showMessage('error', error.data);
+            self.showMessage('error', "Test failed");
             self.setState({started: false});
           });
         this.setState({started: true});

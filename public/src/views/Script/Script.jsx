@@ -25,13 +25,15 @@ class Script extends Component{
 
         this.state = {
             started: false,
-            url: localStorage.getItem('urlScript') || '',
-            script: localStorage.getItem('scriptScript') || 'console.log(msg.url);\nconsole.log(page);',
+            url: localStorage.getItem('urlScript') || 'http://example.com',
+            script: localStorage.getItem('scriptScript') || "console.log(msg.url);\nconsole.log(page);\nresponse.write(JSON.stringify({status: 'success'}));\nresponse.closeGracefully();",
             hostname: window.location.hostname,
+            output: '',
         }
 
         this.startJob = this.startJob.bind(this);
         this.saveScript = this.saveScript.bind(this);
+        this.clearScript = this.clearScript.bind(this);
     }
 
     componentDidMount(){
@@ -61,11 +63,12 @@ class Script extends Component{
           })
           .then(function (response) {
             self.showMessage('success', "Test success");
+            self.setState({output: response.data.output});
             self.setState({started: false});
           })
           .catch(function (error) {
             console.log(error);
-            self.showMessage('error', error.data);
+            self.showMessage('error', "Test failed");
             self.setState({started: false});
           });
         this.setState({started: true});
@@ -87,6 +90,12 @@ class Script extends Component{
         this.showMessage('success', "Script saved");
     }
 
+    clearScript() {
+        this.setState({script: ''});
+        localStorage.setItem('scriptScript', '');
+        this.showMessage('success', "Script saved");
+    }
+
 
     render() {
         return (
@@ -100,7 +109,7 @@ class Script extends Component{
                                 content={
                                 <div>
                                     <p>Custom code is used to decie how the bot behaves on the page. All PhantomJS functionalities are available. The object page represent your page, the object msg.url is your entry url. You cannot send other parameters for now. Use response.closeGracefully(); to close gracefuly your request.</p>
-                                    <p>Use the test function to test your code on a page</p>
+                                    <p>Use the Live Test button to test your code on a page</p>
                                     <form onSubmit={this.startJob}>
                                         <FormInputs
                                             ncols = {["col-xs-12"]}
@@ -119,6 +128,9 @@ class Script extends Component{
                                         <Button bsStyle="info" fill type="submit" disabled={this.state.started}>Live Test</Button>
                                         <span>&nbsp;</span>
                                         <Button bsStyle="success" fill type="button" disabled={this.state.started} onClick={this.saveScript}>Save Code</Button>
+                                        <span>&nbsp;</span>
+                                        <Button bsStyle="info" type="button" disabled={this.state.started} onClick={this.clearScript}>Clear Code</Button>
+                                        <span>&nbsp;</span>
                                         <div className="clearfix"></div>
                                     </form>
                                     </div>
@@ -142,6 +154,16 @@ class Script extends Component{
                                 showLineNumbers: true,
                                 tabSize: 2,
                             }}/>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col sm={4}>
+                            <Card
+                                title="Test output"
+                                content={
+                                    <textarea className="form-control" value={this.state.output} />
+                                }
+                            />
                         </Col>
                     </Row>
                 </Grid>

@@ -29,6 +29,7 @@ class Dashboard extends Component {
             loadImages: true,
             userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36',
             hostname: window.location.hostname,
+            useCustomCode: false,
         };
 
         if (this.state.proxies[0] === '') {
@@ -112,7 +113,7 @@ class Dashboard extends Component {
             proxies: this.state.proxies,
             loadImages: this.state.loadImages,
             userAgent: this.state.userAgent,
-            customScript: localStorage.getItem('scriptScript') || "",
+            customScript: this.state.useCustomCode ? (localStorage.getItem('scriptScript') || '') : '',
           })
           .then(function (response) {
             self.setState({totalReq: parseInt(self.state.requestCount, 10)});
@@ -198,6 +199,10 @@ class Dashboard extends Component {
 
     handleChangeUserAgent(event) {
         this.setState({userAgent: event.target.value});
+    }
+
+    handleChangeUseCustomCode(event) {
+        this.setState({useCustomCode: !this.state.useCustomCode});
     }
 
     render() {
@@ -330,6 +335,20 @@ class Dashboard extends Component {
                                                  value : this.state.userAgent,
                                                  disabled: this.state.started,
                                                  onChange: this.handleChangeUserAgent.bind(this),
+                                                }
+                                            ]}
+                                        />
+                                        <FormInputs
+                                            ncols = {["col-md-5"]}
+                                            proprieties = {[
+                                                {
+                                                 label : "Use custom code",
+                                                 type : "checkbox",
+                                                 bsClass : "form-control",
+                                                 defaultChecked: false,
+                                                 value : this.state.useCustomCode,
+                                                 disabled: this.state.started,
+                                                 onChange: this.handleChangeUseCustomCode.bind(this),
                                                 }
                                             ]}
                                         />

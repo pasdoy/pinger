@@ -114,6 +114,7 @@ func GetShim(custom string) string {
 	if custom == "" {
 		custom = d
 	}
+
 	return fmt.Sprintf(shim, custom)
 }
 
@@ -308,7 +309,16 @@ func (p *WebPage) Flow(url string) error {
 		"url": url,
 	}
 
-	p.ref.process.doJSON("POST", "/webpage/Flow", req, nil)
+	var resp struct {
+		Status string `json:"status"`
+	}
+	if err := p.ref.process.doJSON("POST", "/webpage/Flow", req, &resp); err != nil {
+		return err
+	}
+
+	if resp.Status == "failed" {
+		return errors.New("failed")
+	}
 
 	return nil
 }
@@ -1371,7 +1381,6 @@ function handleWebpageFlow(request, response) {
 	var msg = JSON.parse(request.post)
 	var page = ref(msg.ref)
 	%s
-	response.closeGracefully();
 }
 
 function handleWebpageContent(request, response) {
