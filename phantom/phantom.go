@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -77,6 +78,7 @@ func (p *Process) Open(customShim string) error {
 
 		// Write shim script.
 		scriptPath := filepath.Join(path, "shim.js")
+		log.Debugf("shim location: %s", scriptPath)
 		if err := ioutil.WriteFile(scriptPath, []byte(customShim), 0600); err != nil {
 			return err
 		}
@@ -284,6 +286,8 @@ func (p *WebPage) Open(url string) error {
 		return err
 	}
 
+	log.Debugf("Open response: %s", resp)
+
 	if resp.Status != "success" {
 		return errors.New("failed")
 	}
@@ -316,7 +320,8 @@ func (p *WebPage) Flow(url string) error {
 		return err
 	}
 
-	if resp.Status == "failed" {
+	log.Debugf("Flow response: %s", resp)
+	if resp.Status == "fail" {
 		return errors.New("failed")
 	}
 

@@ -42,8 +42,8 @@ func handlePhantomJSBin() {
 			log.Fatal("Cannot find phantomjs binary after extraction")
 		}
 
-		FileCopy(files[0], "./phantomjs")
-		os.Chmod("./phantomjs", 0766)
+		FileCopy(files[0], phantomExe)
+		os.Chmod(phantomExe, 0766)
 	} else {
 		path := filepath.Join(tmpFolder, "./phantomjs")
 		downloadPhantomJSLib(path)

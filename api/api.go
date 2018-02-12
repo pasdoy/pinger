@@ -127,7 +127,8 @@ func postScriptTest(c echo.Context) error {
 		return err
 	}
 
-	shim := fmt.Sprintf(`var page = require('webpage').create();
+	shim := fmt.Sprintf(`var response = {};
+var page = require('webpage').create();
 var msg = {url: "%s"};
 %s
 phantom.exit()`, r.URL, r.Script)
@@ -144,6 +145,7 @@ phantom.exit()`, r.URL, r.Script)
 
 	// Write shim script.
 	scriptPath := filepath.Join(path, "shim.js")
+	log.Debug(scriptPath)
 	if err := ioutil.WriteFile(scriptPath, []byte(shim), 0600); err != nil {
 		return err
 	}

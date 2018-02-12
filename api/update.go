@@ -16,7 +16,9 @@ func checkForUpdate() {
 	log.Info("Check for update....")
 	s := "./pinger"
 	if runtime.GOOS == "windows" {
+		log.Info("Windows has no auto update working yet :(")
 		s = "./pinger.exe"
+		return
 	}
 	m := &update.Manager{
 		Command: s,
