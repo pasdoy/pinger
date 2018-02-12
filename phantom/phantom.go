@@ -321,7 +321,7 @@ func (p *WebPage) Flow(url string) error {
 	}
 
 	log.Debugf("Flow response: %s", resp)
-	if resp.Status == "fail" {
+	if resp.Status != "success" {
 		return errors.New("failed")
 	}
 

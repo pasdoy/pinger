@@ -10,6 +10,8 @@ import {StatsCard} from '../../components/StatsCard/StatsCard.jsx';
 
 import axios from 'axios';
 
+import Modal from 'react-modal';
+
 class Dashboard extends Component {
     constructor(props){
         super(props);
@@ -30,6 +32,8 @@ class Dashboard extends Component {
             userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36',
             hostname: window.location.hostname,
             useCustomCode: false,
+            modalIsOpen: localStorage.getItem('welcomeModal') ? false : true,
+            newEmail: '',
         };
 
         if (this.state.proxies[0] === '') {
@@ -41,6 +45,8 @@ class Dashboard extends Component {
         this.stopJob = this.stopJob.bind(this);
         this.checkStatus = this.checkStatus.bind(this);
         this.updateStats = this.updateStats.bind(this);
+
+        Modal.setAppElement('#root');
     }
 
     componentDidMount(){
@@ -205,9 +211,73 @@ class Dashboard extends Component {
         this.setState({useCustomCode: !this.state.useCustomCode});
     }
 
+    handleChangeNewEmail(event) {
+        this.setState({newEmail: event.target.value});
+    }
+
+    closeModal = () => {
+        this.setState({modalIsOpen: false});
+    }
+
+    handleModalCloseRequest = () => {
+        localStorage.setItem('welcomeModal', true);
+        this.setState({modalIsOpen: false});
+    }
+
+    handleSaveClicked = (e) => {
+        localStorage.setItem('welcomeModal', true);
+        e.preventDefault();
+        this.setState({modalIsOpen: false});
+
+        var self = this;
+        axios.post('https://gwzpyl7ofd.execute-api.us-west-2.amazonaws.com/prod/log-emails', {
+          email: this.state.newEmail,
+        })
+        .then(function (response) {
+          self.showMessage('success', 'Thanks for registering');
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+        e.preventDefault();
+    }
+
     render() {
         return (
             <div className="content">
+            <Modal
+              className="modal-dialog"
+              closeTimeoutMS={150}
+              isOpen={this.state.modalIsOpen}
+              onRequestClose={this.handleModalCloseRequest}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Free Updates</h4>
+                </div>
+                <div className="modal-body">
+                  <h4>Add your email to recieve updates. No spam or bullshit ads.</h4>
+                  <form onSubmit={this.handleSaveClicked}>
+                      <FormInputs
+                          ncols = {["col-xs-12"]}
+                          proprieties = {[
+                              {
+                               label : "Email",
+                               type : "email",
+                               bsClass : "form-control",
+                               placeholder : "example@gmail.com",
+                               value: this.state.newEmail,
+                               onChange: this.handleChangeNewEmail.bind(this),
+                              }
+                          ]}
+                      />
+                  </form>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-primary" onClick={this.handleSaveClicked}>Add Email</button>
+                </div>
+              </div>
+            </Modal>
             <NotificationSystem ref="notificationSystem" style={style}/>
                 <Grid fluid>
                     <Row>
